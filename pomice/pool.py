@@ -18,6 +18,7 @@ from urllib.parse import quote
 
 import aiohttp
 import orjson as json
+import ssl
 from discord import Client
 from discord.ext import commands
 from discord.utils import MISSING
@@ -457,11 +458,22 @@ class Node:
                         f"Skipping version check. Using hardcoded version: {self._version.major}.{self._version.minor}.{self._version.fix}",
                     )
 
-            self._websocket = await client.connect(
-                f"{self._websocket_uri}/v{self._version.major}/websocket",
-                extra_headers=self._headers,
-                ping_interval=self._heartbeat,
-            )
+                ssl_context = None
+                if self._secure:
+                    ssl_context = ssl.create_default_context()
+                    ssl_context.check_hostname = False
+                    ssl_context.verify_mode = ssl.CERT_NONE
+                    self._session = aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context))
+                else:
+                    self._session = aiohttp.ClientSession()
+
+                self._websocket = await client.connect(
+                    f"{self._websocket_uri}/v{self._version.major}/websocket",
+                    extra_headers=self._headers,
+                    ping_interval=self._heartbeat,
+                    ssl=ssl_context,  # Pass the SSL context
+                )
+
 
             if reconnect:
                 if self._log:
