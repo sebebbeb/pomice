@@ -448,19 +448,13 @@ class Node:
 
         try:
             if not reconnect:
-                version: str = await self.send(
-                    method="GET",
-                    path="version",
-                    ignore_if_available=True,
-                    include_version=False,
-                )
-
-                await self._handle_version_check(version=version)
+                # Hardcode the Lavalink version instead of fetching it
+                self._version = LavalinkVersion(4, 0, 8)  # Adjust the version to match your Lavalink server
                 await self._set_ext_client_session(session=self._session)
 
                 if self._log:
                     self._log.debug(
-                        f"Version check from Node {self._identifier} successful. Returned version {version}",
+                        f"Skipping version check. Using hardcoded version: {self._version.major}.{self._version.minor}.{self._version.fix}",
                     )
 
             self._websocket = await client.connect(
